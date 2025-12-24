@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meetly | Профессиональные видеоконференции</title>
+    <meta name="description" content="Безопасные видеовстречи с шифрованием. Чат, демонстрация экрана, без лимитов.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src='https://meet.jit.si/external_api.js'></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== CSS VARIABLES & RESET ===== */
+        :root {
+            /* Темная тема (по умолчанию) */
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --bg-input: rgba(15, 23, 42, 0.8);
+            
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-accent: #38bdf8;
+            
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary: #8b5cf6;
+            --danger: #ef4444;
+            --success: #10b981;
+            
+            --border: #334155;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --glass: rgba(30, 41, 59, 0.4);
+            --backdrop-blur: blur(20px);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #e2e8f0;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --bg-input: rgba(255, 255, 255, 0.8);
+            
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-accent: #0369a1;
+            
+            --border: #cbd5e1;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            --glass: rgba(255, 255, 255, 0.7);
+        }
+
+        /* ===== BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: var(--transition);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 1200px;
+            position: relative;
+        }
+
+        /* ===== WELCOME SCREEN ===== */
+        .welcome-screen {
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo-icon {
+            font-size: 2.8rem;
+            color: var(--text-accent);
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.3));
+        }
+
+        .logo {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-accent), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .tagline {
+            font-size: 1.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .highlight {
+            color: var(--text-accent);
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            opacity: 0.9;
+        }
+
+        /* ===== CARD & INPUT ===== */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: var(--backdrop-blur);
+            -webkit-backdrop-filter: var(--backdrop-blur);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 3rem;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        #room-name {
+            width: 100%;
+            padding: 1.2rem 1.2rem 1.2rem 3rem;
+            background: var(--bg-input);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        #room-name:focus {
+            outline: none;
+            border-color: var(--text-accent);
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+        }
+
+        .input-hint {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            padding-left: 0.5rem;
+        }
+
+        /* ===== BUTTONS ===== */
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary, .btn-secondary, .btn-exit, .btn-copy {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 1.1rem 2rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--text-accent);
+        }
+
+        .btn-icon {
+            font-size: 1.1rem;
+        }
+
+        /* ===== FEATURES ===== */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            backdrop-filter: var(--backdrop-blur);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid transparent;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(56, 189, 248, 0.3);
+            box-shadow: var(--shadow);
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .feature-icon.security {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.3));
+            color: #10b981;
+        }
+
+        .feature-icon.chat {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.3));
+            color: #3b82f6;
+        }
+
+        .feature-icon.unlimited {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.3));
+            color: #8b5cf6;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* ===== VIDEO CONFERENCE ===== */
+        .video-conference {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            z-index: 1000;
+        }
+
+        #jitsi-container {
+            width: 100%;
+            height: calc(100vh - 80px);
+        }
+
+        .meeting-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--bg-secondary);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-exit {
+            background: var(--danger);
+            color: white;
+            padding: 0.8rem 1.8rem;
+            min-width: auto;
+        }
+
+        .btn-exit:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+
+        .meeting-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .btn-copy {
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            min-width: auto;
+            border: 1px solid var(--border);
+        }
+
+        .btn-copy:hover {
+            color: var(--text-primary);
+            border-color: var(--text-accent);
+        }
+
+        /* ===== FOOTER & THEME TOGGLE ===== */
+        .footer-note {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 2rem;
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-note i {
+            margin-right: 0.5rem;
+            color: var(--success);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            backdrop-filter: var(--backdrop-blur);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(30deg);
+            border-color: var(--text-accent);
+        }
+
+        /* ===== UTILITY CLASSES ===== */
+        .hidden {
+            display: none !important;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2.8rem;
+            }
+            
+            .tagline {
+                font-size: 1.5rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn-primary, .btn-secondary {
+                min-width: 100%;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .meeting-controls {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="app">
+        <!-- Экран приветствия -->
+        <section id="welcome-container" class="welcome-screen">
+            <header class="hero">
+                <div class="logo-container">
+                    <i class="fas fa-video logo-icon"></i>
+                    <h1 class="logo">Meetly</h1>
+                </div>
+                <p class="tagline">Профессиональная видеосвязь <span class="highlight">в один клик</span></p>
+                <p class="subtitle">Безопасные встречи с end-to-end шифрованием</p>
+            </header>
+
+            <div class="card">
+                <div class="input-group">
+                    <i class="fas fa-hashtag input-icon"></i>
+                    <input type="text" id="room-name" placeholder="office-meeting, project-brainstorm, team-standup" autocomplete="off">
+                    <div class="input-hint">Можно использовать буквы, цифры и дефисы</div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="start-btn" class="btn-primary">
+                        <i class="fas fa-rocket btn-icon"></i>
+                        Создать или присоединиться
+                    </button>
+                    <button class="btn-secondary">
+                        <i class="fas fa-bolt btn-icon"></i>
+                        Быстрая встреча
+                    </button>
+                </div>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon security">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>End-to-end шифрование</h3>
+                    <p>Ваши переговоры защищены</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon chat">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h3>Чат и демонстрация</h3>
+                    <p>Общий экран и обмен файлами</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon unlimited">
+                        <i class="fas fa-infinity"></i>
+                    </div>
+                    <h3>Без лимитов</h3>
+                    <p>Неограниченное время и участники</p>
+                </div>
+            </div>
+
+            <footer class="footer-note">
+                <p><i class="fas fa-lock"></i> Без регистрации. Не храним ваши данные.</p>
+            </footer>
+        </section>
+
+        <!-- Видеоконференция -->
+        <section id="video-container" class="video-conference hidden">
+            <div id="jitsi-container"></div>
+            <div class="meeting-controls">
+                <button id="exit-btn" class="btn-exit">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Покинуть встречу
+                </button>
+                <div class="meeting-info">
+                    <span id="room-display">Комната: </span>
+                    <button class="btn-copy" title="Скопировать ссылку">
+                        <i class="fas fa-link"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="theme-toggle" title="Переключить тему">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <script>
+        // Основной код остается без изменений
+        let api = null;
+
+        // Кнопка старта
+        document.getElementById('start-btn').onclick = function() {
+            let roomName = document.getElementById('room-name').value.trim();
+            if (!roomName) {
+                roomName = 'meetly-' + Math.random().toString(36).substring(2, 7);
+                document.getElementById('room-name').value = roomName;
+            }
+
+            // Переключаем интерфейс
+            document.getElementById('welcome-container').classList.add('hidden');
+            document.getElementById('video-container').classList.remove('hidden');
+            
+            // Обновляем отображение названия комнаты
+            const roomDisplay = document.getElementById('room-display');
+            if (roomDisplay) {
+                roomDisplay.textContent = 'Комната: ' + roomName;
+            }
+
+            const domain = 'meet.jit.si';
+            const options = {
+                roomName: roomName,
+                width: '100%',
+                height: '100%',
+                parentNode: document.querySelector('#jitsi-container'),
+                lang: 'ru',
+                interfaceConfigOverwrite: {
+                    DEFAULT_BACKGROUND: '#0f172a',
+                    SHOW_JITSI_WATERMARK: false
+                }
+            };
+
+            // Запускаем Jitsi
+            api = new JitsiMeetExternalAPI(domain, options);
+        };
+
+        // Кнопка выхода (остается как было)
+        document.getElementById('exit-btn').onclick = function() {
+            if (api) {
+                api.dispose();
+            }
+            // Возвращаемся на главный экран
+            document.getElementById('video-container').classList.add('hidden');
+            document.getElementById('welcome-container').classList.remove('hidden');
+        };
+
+        // ===== НОВЫЕ ФУНКЦИОНАЛЬНЫЕ КНОПКИ =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Кнопка "Быстрая встреча"
+            const quickMeetBtn = document.querySelector('.btn-secondary');
+            if (quickMeetBtn) {
+                quickMeetBtn.addEventListener('click', function() {
+                    const randomId = Math.random().toString(36).substring(2, 7);
+                    const roomName = 'quick-' + randomId;
+                    document.getElementById('room-name').value = roomName;
+                    document.getElementById('start-btn').click();
+                });
+            }
+            
+            // 2. Кнопка копирования ссылки
+            const copyBtn = document.querySelector('.btn-copy');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function() {
+                    let roomName = document.getElementById('room-name').value.trim();
+                    if (!roomName) {
+                        roomName = 'meetly-room';
+                    }
+                    
+                    const link = window.location.origin + window.location.pathname + '?room=' + encodeURIComponent(roomName);
+                    
+                    navigator.clipboard.writeText(link).then(() => {
+                        const originalHTML = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-check"></i>';
+                        this.title = 'Скопировано!';
+                        
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="fas fa-link"></i>';
+                            this.title = 'Скопировать ссылку';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Не удалось скопировать ссылку:', err);
+                        // Fallback для старых браузеров
+                        const tempInput = document.createElement('input');
+                        tempInput.value = link;
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        
+                        this.innerHTML = '<i class="fas fa-check"></i>';
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="fas fa-link"></i>';
+                        }, 2000);
+                    });
+                });
+            }
+            
+            // 3. Переключатель темы (если элемент существует)
+            const themeToggle = document.querySelector('.theme-toggle');
+            if (themeToggle) {
+                // Проверяем сохраненную тему
+                const savedTheme = localStorage.getItem('meetly-theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateThemeIcon(themeToggle, savedTheme);
+                
+                themeToggle.addEventListener('click', function() {
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('meetly-theme', newTheme);
+                    updateThemeIcon(this, newTheme);
+                });
+                
+                function updateThemeIcon(button, theme) {
+                    if (button.querySelector('i')) {
+                        button.querySelector('i').className = theme === 'dark' 
+                            ? 'fas fa-moon' 
+                            : 'fas fa-sun';
+                    } else {
+                        button.innerHTML = theme === 'dark' ? '🌙' : '☀️';
+                    }
+                }
+            }
+            
+            // 4. Случайный placeholder для комнаты
+            const roomInput = document.getElementById('room-name');
+            if (roomInput) {
+                const placeholders = [
+                    'team-brainstorm', 'project-review', 'client-meeting',
+                    'weekly-standup', 'design-critique', 'family-chat'
+                ];
+                const randomPlaceholder = placeholders[Math.floor(Math.random() * placeholders.length)];
+                roomInput.placeholder = roomInput.placeholder.replace('office-meeting', randomPlaceholder);
+                
+                // Автозаполнение из URL параметра
+                const urlParams = new URLSearchParams(window.location.search);
+                const roomParam = urlParams.get('room');
+                if (roomParam) {
+                    roomInput.value = decodeURIComponent(roomParam);
+                }
+            }
+            
+            // 5. Улучшенное поле ввода: Enter для старта
+            if (roomInput) {
+                roomInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        document.getElementById('start-btn').click();
+                    }
+                });
+            }
+            
+            // 6. Подсветка активного поля
+            if (roomInput) {
+                roomInput.addEventListener('focus', function() {
+                    this.parentElement.classList.add('focused');
+                });
+                roomInput.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('focused');
+                });
+            }
+        });
+
+        // ===== CSS для новых состояний =====
+        // Добавьте в конец style.css:
+        /*
+        .input-group.focused {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        #room-display {
+            font-weight: 500;
+            color: #38bdf8;
+            margin-right: 10px;
+        }
+        */
+    </script>
+</body>
+</html>
