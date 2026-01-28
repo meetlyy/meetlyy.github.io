@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src='https://meet.jit.si/external_api.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -73,19 +74,37 @@
         .subtitle { font-size: 1.1rem; color: var(--text-secondary); }
 
         .card { background: var(--bg-card); backdrop-filter: var(--backdrop-blur); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem; box-shadow: var(--shadow); margin-bottom: 3rem; }
-        .input-group { position: relative; margin-bottom: 2rem; }
-        .input-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
+        .input-group {
+        position: relative;
+        margin-bottom: 2rem;
+        display: flex; /* Добавляем flex */
+        align-items: center; /* Центрируем содержимое по вертикали */
+        }
+        .input-icon {
+        position: absolute;
+        left: 20px;
+        /* Убираем top: 50% и transform, так как flex-box выровняет иконку */
+        top: auto; 
+        transform: none; 
+        color: var(--text-secondary);
+        pointer-events: none; /* Чтобы иконка не мешала клику по инпуту */
+        display: flex;
+        align-items: center;
+        height: 100%; /* Заставляем блок иконки занять всю высоту для точного центра */
+        }
         #room-name { width: 100%; padding: 1.2rem 1.2rem 1.2rem 3rem; background: var(--bg-input); border: 2px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); font-size: 1rem; transition: var(--transition); }
         #room-name:focus { outline: none; border-color: var(--text-accent); }
 
         .button-group { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .btn-primary, .btn-secondary, .btn-exit, .btn-copy { 
+        .btn-primary, .btn-secondary, .btn-exit, .btn-copy, .btn-share { 
             display: flex; align-items: center; justify-content: center; gap: 10px; 
             padding: 1.1rem 2rem; border: none; border-radius: var(--radius-md); 
             font-size: 1rem; font-weight: 600; cursor: pointer; transition: var(--transition); flex: 1; 
         }
         .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
         .btn-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); }
+        .btn-share { background: rgba(56, 189, 248, 0.1); color: var(--text-accent); border: 1px solid var(--text-accent); flex: 0.5; }
+        .btn-share:hover { background: var(--text-accent); color: white; }
         
         .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-bottom: 3rem; }
         .feature-card { background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); text-align: center; }
@@ -100,6 +119,15 @@
         .btn-exit { background: var(--danger); color: white; min-width: auto; }
 
         .top-controls { position: fixed; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 100; }
+        /* Кнопка QR в нижнем углу */
+        .qr-bottom-btn { 
+            position: fixed; bottom: 20px; right: 20px; 
+            background: var(--primary); color: white; width: 60px; height: 60px; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; box-shadow: var(--shadow-lg); z-index: 100; transition: var(--transition); border: none;
+        }
+        .qr-bottom-btn:hover { transform: scale(1.1); background: var(--secondary); }
+
         .control-btn { 
             background: var(--bg-card); backdrop-filter: var(--backdrop-blur); 
             width: 50px; height: 50px; border-radius: 50%; display: flex; 
@@ -123,7 +151,7 @@
         }
         @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-        /* MODAL CHECKER CSS */
+        /* MODAL CSS (Общий для чекера и QR) */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
@@ -134,11 +162,13 @@
             width: 90%; max-width: 500px; text-align: center; border: 1px solid var(--border);
         }
         #preview-video { width: 100%; border-radius: var(--radius-md); background: #000; margin: 1rem 0; transform: scaleX(-1); }
+        #qrcode { display: flex; justify-content: center; padding: 20px; background: white; border-radius: var(--radius-md); margin: 1rem 0; }
 
         @media (max-width: 768px) {
             .logo { font-size: 2.5rem; }
             .button-group { flex-direction: column; }
             .top-controls { top: 10px; right: 10px; }
+            .qr-bottom-btn { bottom: 100px; } /* Чтобы не перекрывать мобильную панель в Jitsi */
         }
     </style>
 </head>
@@ -148,6 +178,19 @@
         <div class="control-btn lang-btn" id="lang-toggle" title="Switch Language">EN</div>
         <div class="control-btn theme-toggle" id="theme-toggle" title="Toggle Theme">
             <i class="fas fa-moon"></i>
+        </div>
+    </div>
+
+    <button class="qr-bottom-btn" id="qr-open-btn" title="Показать QR-код">
+        <i class="fas fa-qrcode fa-lg"></i>
+    </button>
+
+    <div id="qr-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>QR-код комнаты</h3>
+            <div id="qrcode"></div>
+            <p style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-secondary);">Отсканируйте, чтобы быстро войти с мобильного</p>
+            <button class="btn-primary" onclick="closeQR()" style="width: 100%;">Закрыть</button>
         </div>
     </div>
 
@@ -175,7 +218,6 @@
                 <div class="input-group">
                     <i class="fas fa-hashtag input-icon"></i>
                     <input type="text" id="room-name" placeholder="office-meeting" autocomplete="off">
-                    <div class="input-hint" data-key="inputHint">Можно использовать буквы, цифры и дефисы</div>
                 </div>
                 
                 <div class="button-group">
@@ -186,6 +228,9 @@
                     <button id="quick-btn" class="btn-secondary">
                         <i class="fas fa-bolt btn-icon"></i>
                         <span data-key="quickBtn">Быстрая встреча</span>
+                    </button>
+                    <button id="share-link-btn" class="btn-share" title="Поделиться ссылкой">
+                        <i class="fas fa-share-alt"></i>
                     </button>
                 </div>
             </div>
@@ -243,7 +288,6 @@
             ru: {
                 tagline: 'Профессиональная видеосвязь <span class="highlight">в один клик</span>',
                 subtitle: 'Безопасные встречи с end-to-end шифрованием',
-                inputHint: 'Можно использовать буквы, цифры и дефисы',
                 startBtn: 'Создать или присоединиться',
                 quickBtn: 'Быстрая встреча',
                 f1Title: 'End-to-end шифрование',
@@ -256,12 +300,12 @@
                 exitBtn: 'Покинуть встречу',
                 roomDisplay: 'Комната: ',
                 copied: 'Скопировано!',
-                checkTitle: 'Проверка оборудования'
+                checkTitle: 'Проверка оборудования',
+                shareTitle: 'Присоединяйся к встрече Meetly'
             },
             en: {
                 tagline: 'Professional video calls <span class="highlight">in one click</span>',
                 subtitle: 'Secure meetings with end-to-end encryption',
-                inputHint: 'You can use letters, numbers and hyphens',
                 startBtn: 'Create or Join',
                 quickBtn: 'Quick Meeting',
                 f1Title: 'End-to-end Encryption',
@@ -274,7 +318,8 @@
                 exitBtn: 'Leave Meeting',
                 roomDisplay: 'Room: ',
                 copied: 'Copied!',
-                checkTitle: 'Hardware Check'
+                checkTitle: 'Hardware Check',
+                shareTitle: 'Join Meetly Meeting'
             }
         };
 
@@ -315,6 +360,48 @@
             }
             document.getElementById('check-modal').classList.add('hidden');
         }
+
+        // ФУНКЦИЯ QR-КОДА
+        document.getElementById('qr-open-btn').onclick = function() {
+            const room = document.getElementById('room-name').value.trim() || 'meeting';
+            const url = window.location.origin + window.location.pathname + '?room=' + encodeURIComponent(room);
+            
+            const qrContainer = document.getElementById("qrcode");
+            qrContainer.innerHTML = ""; // Очистка старого кода
+            new QRCode(qrContainer, {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            
+            document.getElementById('qr-modal').classList.remove('hidden');
+        };
+
+        function closeQR() {
+            document.getElementById('qr-modal').classList.add('hidden');
+        }
+
+        // ФУНКЦИЯ ПОДЕЛИТЬСЯ
+        document.getElementById('share-link-btn').onclick = async function() {
+            const room = document.getElementById('room-name').value.trim() || 'meeting';
+            const url = window.location.origin + window.location.pathname + '?room=' + encodeURIComponent(room);
+            const title = i18n[currentLang].shareTitle;
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: title, url: url });
+                } catch (err) { console.log("Share cancelled"); }
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    const icon = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => this.innerHTML = icon, 2000);
+                });
+            }
+        };
 
         document.getElementById('lang-toggle').onclick = function() {
             currentLang = currentLang === 'ru' ? 'en' : 'ru';
